@@ -1,0 +1,10 @@
+--type-add=js=.ejs
+--type-add=erlang=.hrl
+--type-add=erlang=.policy
+--nohtml
+--nocss
+--nojs
+--noxml
+--ignore-dir=.eunit
+--ignore-dir=riak-1.2.0
+--ignore-dir=lager
