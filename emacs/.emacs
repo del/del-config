@@ -19,6 +19,10 @@
 	     (car (file-expand-wildcards "~/git/tools/undo-tree")))
 (add-to-list 'load-path
 	     (car (file-expand-wildcards "~/.emacs.d/ess-5.14/lisp")))
+(add-to-list 'load-path
+	     (car (file-expand-wildcards "~/.emacs.d/elpa/yasnippet-0.6.1")))
+(add-to-list 'load-path
+             (car (file-expand-wildcards "~/git/tools/edts")))
 
 
 ;;==============================================================================
@@ -51,7 +55,9 @@
 (require 'surround)
 (global-surround-mode 1)
 
-;; Set C-p to act as ESC
+;; Set C-g and C-p to go from evil-insert-state to normal state.
+;(define-key evil-insert-state-map "\C-[" 'evil-force-normal-state)
+(define-key evil-insert-state-map "\C-g" 'evil-normal-state)
 (define-key evil-insert-state-map "\C-p" 'evil-normal-state)
 
 ;; It's easy to press Alt-K instead of Windows-K, so unbind it
@@ -60,9 +66,7 @@
 ;; The same goes for C-\ instead of C-', also toggle-input-method is shit
 (global-set-key (kbd "C-\\") 'hippie-expand)
 
-;; I don't like emacs-state, so no need to have a key for it
-(global-unset-key (kbd "C-z"))
-(global-unset-key "\C-z")
+(setq evil-toggle-key "C-`")
 
 ;; Space and backspace move 10 lines forward/backward
 (define-key evil-normal-state-map (kbd "DEL")
@@ -73,10 +77,6 @@
   (lambda () (interactive) (evil-scroll-up 10)))
 (define-key evil-visual-state-map (kbd "SPC")
   (lambda () (interactive) (evil-scroll-down 10)))
-
-;; Let Distel have a couple of key bindings back
-(define-key evil-normal-state-map (kbd "M-.") 'erl-find-source-under-point)
-(define-key evil-normal-state-map (kbd "M-,") 'erl-find-source-unwind)
 
 
 ;;==============================================================================
@@ -196,19 +196,43 @@
   
 
 ;; Distel
-(require 'distel)
-(distel-setup)
-(setq erlookup-roots
-      '("~/git/klarna/dev/lib"
-	"~/git/klarna/otp_r14b03/install/lib"))
-(setq erl-nodename-cache 'kred@afshansamani)
-(setq erl-popup-on-output nil)
-(require 'erlang-compile-server)
-(setq erl-ecs-compile-if-ok nil)
-(evil-define-key 'normal erl-who-calls-mode-map (kbd "q")   'kill-this-buffer-and-window)
-(evil-define-key 'normal erl-who-calls-mode-map (kbd "RET") 'erl-goto-caller)
-(evil-define-key 'normal erl-who-calls-mode-map (kbd "M-.") 'erl-goto-caller)
-(evil-define-key 'normal erl-who-calls-mode-map (kbd "M-,") 'erl-find-source-unwind)
+;(require 'distel)
+;(distel-setup)
+;(setq erlookup-roots
+;      '("~/git/klarna/dev/lib"
+;	"~/git/klarna/otp_r14b03/install/lib"))
+;(setq erl-nodename-cache 'kred@afshansamani)
+;(setq erl-popup-on-output nil)
+;(require 'erlang-compile-server)
+;(setq erl-ecs-compile-if-ok nil)
+;(evil-define-key 'normal erl-who-calls-mode-map (kbd "q")   'kill-this-buffer-and-window)
+;(evil-define-key 'normal erl-who-calls-mode-map (kbd "RET") 'erl-goto-caller)
+;(evil-define-key 'normal erl-who-calls-mode-map (kbd "M-.") 'erl-goto-caller)
+;(evil-define-key 'normal erl-who-calls-mode-map (kbd "M-,") 'erl-find-source-unwind)
+
+;;; Set up some Distel keybindings in evil-mode
+;(define-key evil-normal-state-map (kbd "M-.") 'erl-find-source-under-point)
+;(define-key evil-normal-state-map (kbd "M-,") 'erl-find-source-unwind)
+
+
+;; EDTS
+(require 'edts-start)
+
+;; Set up some EDTS keybindings in evil-mode
+(define-key evil-normal-state-map (kbd "M-.") 'edts-find-source-under-point)
+(define-key evil-normal-state-map (kbd "M-,") 'edts-find-source-unwind)
+
+;; EDTS auto-complete settings
+(setq ac-auto-start nil)
+(defun stop-ac-and-exit-insert ()
+  (interactive)
+  (ac-stop)
+  (evil-normal-state))
+(define-key ac-menu-map (kbd "<escape>") 'stop-ac-and-exit-insert)
+(define-key ac-menu-map (kbd "C-[") 'stop-ac-and-exit-insert)
+(define-key ac-menu-map (kbd "C-p") 'stop-ac-and-exit-insert)
+(define-key ac-menu-map (kbd "C-g") 'ac-stop)
+(define-key ac-mode-map (kbd "C-'") 'auto-complete)
 
 
 ;; ESS mode, for R
@@ -268,6 +292,7 @@
 (ido-mode 1)
 (put 'ido-exit-minibuffer 'disabled nil)
 (put 'narrow-to-region 'disabled nil)
+(setq ido-max-directory-size 100000)
 
 ;; js-mode
 (defun my-js-mode-hook ()
@@ -376,6 +401,12 @@
 ;; Undo/Redo for window management (undo = C-c left, redo = C-c right)
 (winner-mode 1)
 
+;; yasnippet mode
+(require 'yasnippet)
+(setq yas/root-directory "~/.emacs.d/elpa/yasnippet-0.6.1/snippets/")
+(yas/load-directory yas/root-directory)
+(yas/global-mode 1)
+
 
 ;===============================================================================
 ; Global key bindings
@@ -388,7 +419,7 @@
 (global-set-key "\C-cc" 'compile)
  ; TODO: Add cool compile + reload modules :D
 
-;; Revert buffer
+;; Revert buffe
 (global-set-key [f5] 'revert-buffer)
 
 ;; This lets you do M-zf to find a (grep)regexp in all kred-sources.
@@ -417,19 +448,19 @@
 (global-set-key "\C-z" ctrl-z-map)
 (global-set-key "\C-zf" 'kfind)
 (global-set-key "\C-zc" 'kred-compile)
-(global-set-key "\C-zz" 'erl-who-calls)
-(global-set-key "\C-zd" 'erl-fdoc-describe)
-(global-set-key "\C-zm" 'erl-find-module)
-;; flymake
-(global-set-key "\C-ze" 'flymake-display-err-menu-for-current-line)
-(global-set-key "\C-zn" 'flymake-goto-next-error)
-(global-set-key "\C-zp" 'flymake-goto-prev-error)
+;(global-set-key "\C-zz" 'erl-who-calls)
+;(global-set-key "\C-zd" 'erl-fdoc-describe)
+;(global-set-key "\C-zm" 'erl-find-module)
+;;; flymake
+;(global-set-key "\C-ze" 'flymake-display-err-menu-for-current-line)
+;(global-set-key "\C-zn" 'flymake-goto-next-error)
+;(global-set-key "\C-zp" 'flymake-goto-prev-error)
 
 (global-set-key "\C-za" 'align-regexp)
 (global-set-key "\C-zg" 'magit-status)
 
 ;; key binding for auto complete
-(global-set-key (kbd "C-'") 'hippie-expand)
+;(global-set-key (kbd "C-'") 'hippie-expand)
 ;; auto-complete settings
 (setq hippie-expand-try-functions-list '(try-expand-dabbrev
                                          try-expand-dabbrev-all-buffers
@@ -447,6 +478,10 @@
 
 (global-set-key "\C-cu" 'winner-undo)
 (global-set-key "\C-cr" 'winner-redo)
+
+;; simplify some strokes to avoid having to let go of ctrl in the middle
+(global-set-key "\C-x\C-o" 'other-window)
+(global-set-key "\C-x\C-b" 'ido-switch-buffer)
 
 ;; Make delete key behave
 (normal-erase-is-backspace-mode 1)
